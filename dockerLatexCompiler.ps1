@@ -4,14 +4,17 @@ $IMAGE = "texlive/texlive:latest"
 
 # --- Usage ---
 if ($args.Count -lt 2) {
-    Write-Host "Usage: compileLatex.ps1 <project_dir> <archive.tex>"
+    Write-Host "Usage: compileLatex.ps1 <project_dir> <archive.tex> [engine]"
     Write-Host ""
-    Write-Host "Example: compileLatex ./my-thesis main.tex"
+    Write-Host "  engine: pdf | xelatex | lualatex (default: pdf)"
+    Write-Host ""
+    Write-Host "Example: compileLatex ./my-thesis main.tex xelatex"
     exit 1
 }
 
 $PROJECT_DIR = (Resolve-Path $args[0]).Path
 $TEX_FILE = $args[1]
+$ENGINE = if ($args.Count -ge 3) { $args[2] } else { "pdf" }
 
 if (-not (Test-Path (Join-Path $PROJECT_DIR $TEX_FILE))) {
     Write-Host "Error: $PROJECT_DIR/$TEX_FILE not found"
@@ -25,7 +28,7 @@ docker run --rm `
     -v "${PROJECT_DIR}:/doc" `
     -w /doc `
     $IMAGE `
-    latexmk -pdf -interaction=nonstopmode -output-directory=out "$TEX_FILE"
+    latexmk "-$ENGINE" -interaction=nonstopmode -output-directory=out "$TEX_FILE"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error: docker run failed"
