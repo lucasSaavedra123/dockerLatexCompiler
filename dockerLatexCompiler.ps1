@@ -2,6 +2,12 @@
 # More: https://hub.docker.com/r/texlive/texlive
 $IMAGE = "texlive/texlive:latest"
 
+# docker/latexmk write normal progress output to stderr; under an inherited
+# $ErrorActionPreference = "Stop" (e.g. from a caller script) PowerShell 5.1
+# would treat that stderr text as a terminating error. Exit status is checked
+# explicitly via $LASTEXITCODE below, so stderr text alone must not abort.
+$ErrorActionPreference = "Continue"
+
 # --- Usage ---
 if ($args.Count -lt 2) {
     Write-Host "Usage: compileLatex.ps1 <project_dir> <archive.tex> [engine]"
