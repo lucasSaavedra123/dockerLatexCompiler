@@ -1,0 +1,41 @@
+# Available tags: latest (full), base, minimal, medium, small
+# More: https://hub.docker.com/r/texlive/texlive
+$IMAGE = "texlive/texlive:latest"
+
+# --- Usage ---
+if ($args.Count -lt 2) {
+    Write-Host "Usage: compileLatex.ps1 <project_dir> <archive.tex>"
+    Write-Host ""
+    Write-Host "Example: compileLatex ./my-thesis main.tex"
+    exit 1
+}
+
+$PROJECT_DIR = (Resolve-Path $args[0]).Path
+$TEX_FILE = $args[1]
+
+if (-not (Test-Path (Join-Path $PROJECT_DIR $TEX_FILE))) {
+    Write-Host "Error: $PROJECT_DIR/$TEX_FILE not found"
+    exit 1
+}
+
+New-Item -ItemType Directory -Force (Join-Path $PROJECT_DIR "out") | Out-Null
+
+Write-Host "Compiling $TEX_FILE ..."
+docker run --rm `
+    -v "${PROJECT_DIR}:/doc" `
+    -w /doc `
+    $IMAGE `
+    latexmk -pdf -interaction=nonstopmode -output-directory=out "$TEX_FILE"
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Error: docker run failed"
+    exit 1
+}
+
+$PDF_OUT = "out/" + [System.IO.Path]::GetFileNameWithoutExtension($TEX_FILE) + ".pdf"
+if (Test-Path (Join-Path $PROJECT_DIR $PDF_OUT)) {
+    Write-Host "Generated PDF at $PROJECT_DIR/$PDF_OUT"
+} else {
+    Write-Host "Error: PDF was not generated"
+    exit 1
+}
